@@ -12,6 +12,10 @@ Self-hosted stealth browser service for AI agents. Provides CDP (Chrome DevTools
 - **Recipe system** — CRUD API for reusable browser automation flows. Agents create step-based JSON recipes, store them, and execute them against sessions with template params.
 - **Docker-ready** — Ships with Dockerfile and docker-compose.yml for deployment via Coolify or any Docker host.
 
+## OpenClaw Skill
+
+This project ships with a [`SKILL.md`](./SKILL.md) — an [OpenClaw](https://openclaw.org) skill definition that lets any compatible AI agent drive this browser service directly. Agents get structured access to sessions, profiles, captcha solving, and recipes without manual API wiring.
+
 ## Quick Start
 
 ### Local Development
