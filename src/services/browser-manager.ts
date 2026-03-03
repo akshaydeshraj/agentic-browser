@@ -62,6 +62,16 @@ export class BrowserManager {
 
     await fs.mkdir(profileDataDir, { recursive: true });
 
+    // Inject NopeCHA API key into extension manifest if provided
+    if (this.config.nopechaApiKey) {
+      const manifestPath = path.join(nopechaPath, "manifest.json");
+      const manifest = JSON.parse(await fs.readFile(manifestPath, "utf-8"));
+      if (manifest.nopecha?.key !== this.config.nopechaApiKey) {
+        manifest.nopecha.key = this.config.nopechaApiKey;
+        await fs.writeFile(manifestPath, JSON.stringify(manifest, null, "\t"));
+      }
+    }
+
     const channel = detectChromeChannel();
     console.log(`Launching browser with channel: ${channel}`);
 

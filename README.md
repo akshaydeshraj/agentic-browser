@@ -55,7 +55,7 @@ docker compose up --build
 |----------|----------|-------------|
 | `API_TOKEN` | Yes | Bearer token for API authentication |
 | `TWOCAPTCHA_API_KEY` | Yes | [2captcha](https://2captcha.com) API key for captcha fallback |
-| `NOPECHA_API_KEY` | Yes | [NopeCHA](https://nopecha.com) API key for auto-solving extension |
+| `NOPECHA_API_KEY` | No | [NopeCHA](https://nopecha.com) API key. Free tier (100 solves/day from residential IPs) works without a key |
 | `PROFILES_DIR` | No | Profile storage directory (default: `/data/profiles`) |
 | `EXTENSIONS_DIR` | No | Extensions directory (default: `./extensions`) |
 | `RECIPES_DIR` | No | Recipe storage directory (default: `./data/recipes`) |
