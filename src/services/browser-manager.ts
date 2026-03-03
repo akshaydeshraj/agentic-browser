@@ -65,7 +65,7 @@ export class BrowserManager {
     const channel = detectChromeChannel();
     console.log(`Launching browser with channel: ${channel}`);
 
-    const context = await chromium.launchPersistentContext(profileDataDir, {
+    const launchOptions: Record<string, unknown> = {
       channel,
       headless: false,
       viewport: null,
@@ -81,7 +81,27 @@ export class BrowserManager {
         `--disable-extensions-except=${nopechaPath}`,
         `--load-extension=${nopechaPath}`,
       ],
-    });
+    };
+
+    if (req.proxy) {
+      launchOptions.proxy = {
+        server: req.proxy.server,
+        username: req.proxy.username,
+        password: req.proxy.password,
+      };
+    }
+    if (req.geolocation) {
+      launchOptions.geolocation = req.geolocation;
+      launchOptions.permissions = ["geolocation"];
+    }
+    if (req.timezone) launchOptions.timezoneId = req.timezone;
+    if (req.locale) launchOptions.locale = req.locale;
+    if (req.userAgent) launchOptions.userAgent = req.userAgent;
+
+    const context = await chromium.launchPersistentContext(
+      profileDataDir,
+      launchOptions,
+    );
 
     // Discover the actual CDP WebSocket URL from Chrome's debug endpoint
     const internalCdpWsUrl = await this.discoverCdpUrl(port);
@@ -99,6 +119,17 @@ export class BrowserManager {
 
     this.sessions.set(id, session);
     this.profileToSession.set(req.profileName, id);
+
+    // Auto-cleanup on unexpected browser death (crash, OOM-kill)
+    context.browser()?.on("disconnected", () => {
+      if (this.sessions.has(id)) {
+        console.log(`Browser disconnected unexpectedly for session ${id}, cleaning up`);
+        this.usedPorts.delete(port);
+        this.profileToSession.delete(req.profileName);
+        this.sessions.delete(id);
+      }
+    });
+
     return this.toPublicSession(session);
   }
 
@@ -125,10 +156,19 @@ export class BrowserManager {
   async closeSession(id: string): Promise<void> {
     const session = this.sessions.get(id);
     if (!session) throw new Error(`Session not found: ${id}`);
-    await session.context.close();
+    // Delete from maps BEFORE closing so the disconnected handler skips redundant cleanup.
+    // If close() fails, restore state so we don't lose track of a live browser.
     this.usedPorts.delete(session.cdpPort);
     this.profileToSession.delete(session.profileName);
     this.sessions.delete(id);
+    try {
+      await session.context.close();
+    } catch (err) {
+      this.sessions.set(id, session);
+      this.profileToSession.set(session.profileName, id);
+      this.usedPorts.add(session.cdpPort);
+      throw err;
+    }
   }
 
   listSessions(): Session[] {

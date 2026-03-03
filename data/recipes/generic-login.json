@@ -1,0 +1,20 @@
+{
+  "name": "generic-login",
+  "description": "Fill and submit a login form on any page",
+  "steps": [
+    { "action": "goto", "url": "{{url}}" },
+    { "action": "fill", "selector": "{{usernameSelector}}", "value": "{{username}}" },
+    { "action": "wait", "ms": 500 },
+    { "action": "fill", "selector": "{{passwordSelector}}", "value": "{{password}}" },
+    { "action": "wait", "ms": 300 },
+    { "action": "click", "selector": "{{submitSelector}}" }
+  ],
+  "params": {
+    "url": { "required": true, "description": "Login page URL" },
+    "username": { "required": true, "description": "Username or email" },
+    "password": { "required": true, "description": "Password" },
+    "usernameSelector": { "default": "input[type=\"email\"], input[type=\"text\"][name*=\"user\"], input[name*=\"email\"]", "description": "CSS selector for username field" },
+    "passwordSelector": { "default": "input[type=\"password\"]", "description": "CSS selector for password field" },
+    "submitSelector": { "default": "button[type=\"submit\"], input[type=\"submit\"]", "description": "CSS selector for submit button" }
+  }
+}

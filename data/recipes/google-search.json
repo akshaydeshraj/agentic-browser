@@ -1,0 +1,14 @@
+{
+  "name": "google-search",
+  "description": "Search Google and wait for results",
+  "steps": [
+    { "action": "goto", "url": "https://www.google.com" },
+    { "action": "type", "selector": "textarea[name=\"q\"], input[name=\"q\"]", "value": "{{query}}" },
+    { "action": "wait", "ms": 500 },
+    { "action": "click", "selector": "input[name=\"btnK\"], button[type=\"submit\"]" },
+    { "action": "waitForSelector", "selector": "#search, #rso" }
+  ],
+  "params": {
+    "query": { "required": true, "description": "Search query" }
+  }
+}

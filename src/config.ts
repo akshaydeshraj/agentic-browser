@@ -15,5 +15,6 @@ export function loadConfig(): Config {
     nopechaApiKey: process.env.NOPECHA_API_KEY!,
     profilesDir: process.env.PROFILES_DIR ?? "/data/profiles",
     extensionsDir: process.env.EXTENSIONS_DIR ?? "./extensions",
+    recipesDir: process.env.RECIPES_DIR ?? "./data/recipes",
   };
 }

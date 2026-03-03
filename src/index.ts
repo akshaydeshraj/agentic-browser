@@ -8,12 +8,18 @@ import { WsProxy } from "./services/ws-proxy.js";
 import { createAuthMiddleware } from "./middleware/auth.js";
 import { createSessionRoutes } from "./routes/sessions.js";
 import { createCaptchaRoutes } from "./routes/captcha.js";
+import { RecipeStore } from "./services/recipe-store.js";
+import {
+  createRecipeRoutes,
+  createRecipeExecRoutes,
+} from "./routes/recipes.js";
 
 const config = loadConfig();
 const browserManager = new BrowserManager(config);
 const profileManager = new ProfileManager(config.profilesDir);
 const captchaSolver = new CaptchaSolver(config.twoCaptchaApiKey);
 const wsProxy = new WsProxy(browserManager, config.apiToken);
+const recipeStore = new RecipeStore(config.recipesDir);
 
 const app = new Hono();
 const auth = createAuthMiddleware(config.apiToken);
@@ -25,6 +31,11 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 app.use("/sessions/*", auth);
 app.route("/sessions", createSessionRoutes(browserManager));
 app.route("/sessions", createCaptchaRoutes(browserManager, captchaSolver));
+app.route("/sessions", createRecipeExecRoutes(recipeStore, browserManager));
+
+// Recipe CRUD routes (auth required)
+app.use("/recipes/*", auth);
+app.route("/recipes", createRecipeRoutes(recipeStore));
 
 // Profile routes (auth required)
 app.use("/profiles/*", auth);

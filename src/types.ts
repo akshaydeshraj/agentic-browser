@@ -8,8 +8,25 @@ export interface Session {
   status: "starting" | "ready" | "error";
 }
 
+export interface ProxyConfig {
+  server: string;
+  username?: string;
+  password?: string;
+}
+
+export interface GeolocationConfig {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+}
+
 export interface CreateSessionRequest {
   profileName: string;
+  proxy?: ProxyConfig;
+  geolocation?: GeolocationConfig;
+  timezone?: string;
+  locale?: string;
+  userAgent?: string;
 }
 
 export interface SolveCaptchaRequest {
@@ -38,4 +55,36 @@ export interface Config {
   nopechaApiKey: string;
   profilesDir: string;
   extensionsDir: string;
+  recipesDir: string;
+}
+
+// Recipe types
+
+export interface RecipeStep {
+  action: string;
+  url?: string;
+  selector?: string;
+  value?: string;
+  ms?: number;
+  waitForUrl?: string;
+}
+
+export interface RecipeParam {
+  required?: boolean;
+  default?: string;
+  description?: string;
+}
+
+export interface RecipeDefinition {
+  name: string;
+  description: string;
+  steps: RecipeStep[];
+  params: Record<string, RecipeParam>;
+}
+
+export interface RecipeResult {
+  success: boolean;
+  data?: Record<string, unknown>;
+  error?: string;
+  stepsCompleted: number;
 }
