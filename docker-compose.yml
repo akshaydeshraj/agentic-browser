@@ -12,10 +12,12 @@ services:
       - NOPECHA_API_KEY=${NOPECHA_API_KEY}
       - PROFILES_DIR=/data/profiles
       - EXTENSIONS_DIR=/app/extensions
+      - RECIPES_DIR=/data/recipes
       - PORT=3000
       - NODE_ENV=production
     volumes:
       - browser-profiles:/data/profiles
+      - browser-recipes:/data/recipes
     # Chrome requires large /dev/shm (default 64MB crashes it)
     shm_size: "2gb"
     # Chrome sandbox needs namespace isolation
@@ -29,4 +31,6 @@ services:
 
 volumes:
   browser-profiles:
+    driver: local
+  browser-recipes:
     driver: local
