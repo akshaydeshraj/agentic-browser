@@ -31,16 +31,18 @@ WORKDIR /app
 
 # Install Node dependencies (layer cache)
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Install Patchright's patched Chromium (needed alongside real Chrome)
 RUN npx patchright install chromium
 
+# Copy source and build TypeScript
+COPY tsconfig.json ./
+COPY src/ ./src/
+RUN npm run build && npm prune --omit=dev
+
 # Copy NopeCHA extension
 COPY extensions/ ./extensions/
-
-# Copy compiled TypeScript
-COPY dist/ ./dist/
 
 # Copy seed recipes
 COPY data/recipes/ ./data/recipes/
