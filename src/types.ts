@@ -66,7 +66,10 @@ export interface RecipeStep {
   selector?: string;
   value?: string;
   ms?: number;
+  delay?: number;
   waitForUrl?: string;
+  timeout?: number;
+  expression?: string;
 }
 
 export interface RecipeParam {
