@@ -5,6 +5,21 @@ import type { Profile } from "../types.js";
 export class ProfileManager {
   constructor(private profilesDir: string) {}
 
+  private safeName(name: string): string {
+    // Only allow alphanumeric, hyphens, underscores
+    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+      throw new Error(
+        `Invalid profile name: "${name}". Only alphanumeric, hyphens, and underscores allowed.`,
+      );
+    }
+    // Verify resolved path stays under profilesDir
+    const resolved = path.resolve(this.profilesDir, name);
+    if (!resolved.startsWith(path.resolve(this.profilesDir) + path.sep)) {
+      throw new Error(`Invalid profile name: "${name}"`);
+    }
+    return name;
+  }
+
   async ensureDir(): Promise<void> {
     await fs.mkdir(this.profilesDir, { recursive: true });
   }
@@ -27,14 +42,16 @@ export class ProfileManager {
   }
 
   async createProfile(name: string): Promise<Profile> {
-    const dataDir = path.join(this.profilesDir, name);
+    const safe = this.safeName(name);
+    const dataDir = path.join(this.profilesDir, safe);
     await fs.mkdir(dataDir, { recursive: true });
     const stat = await fs.stat(dataDir);
-    return { name, dataDir, createdAt: stat.birthtime.toISOString() };
+    return { name: safe, dataDir, createdAt: stat.birthtime.toISOString() };
   }
 
   async deleteProfile(name: string): Promise<void> {
-    const dataDir = path.join(this.profilesDir, name);
+    const safe = this.safeName(name);
+    const dataDir = path.join(this.profilesDir, safe);
     await fs.rm(dataDir, { recursive: true, force: true });
   }
 }

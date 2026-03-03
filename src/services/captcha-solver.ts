@@ -7,7 +7,6 @@ const BASE_DELAY_MS = 2000;
 
 export class CaptchaSolver {
   private solver: Solver;
-  private solvedUrls = new Set<string>();
 
   constructor(apiKey: string) {
     this.solver = new Solver(apiKey);
@@ -17,13 +16,6 @@ export class CaptchaSolver {
     context: BrowserContext,
     req: SolveCaptchaRequest,
   ): Promise<SolveCaptchaResponse> {
-    // Idempotency: skip if already solved for this URL
-    const cacheKey = `${req.pageUrl}:${req.type}`;
-    if (this.solvedUrls.has(cacheKey)) {
-      throw new Error(
-        `Captcha already solved for ${req.pageUrl}. Create a new request if needed.`,
-      );
-    }
 
     const pages = context.pages();
     const page = pages[pages.length - 1];
@@ -37,7 +29,6 @@ export class CaptchaSolver {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       try {
         const result = await this.solveByType(page, type, req);
-        this.solvedUrls.add(cacheKey);
         return { ...result, type };
       } catch (err) {
         lastError = err as Error;
@@ -175,12 +166,38 @@ export class CaptchaSolver {
     token: string,
   ): Promise<void> {
     await page.evaluate((t: string) => {
-      const textarea = document.getElementById(
-        "g-recaptcha-response",
-      ) as HTMLTextAreaElement | null;
-      if (textarea) {
+      // Inject token into all g-recaptcha-response textareas
+      const textareas = document.querySelectorAll(
+        '[id^="g-recaptcha-response"]',
+      ) as NodeListOf<HTMLTextAreaElement>;
+      for (const textarea of textareas) {
         textarea.style.display = "block";
         textarea.value = t;
+      }
+
+      // Trigger the reCAPTCHA callback to mark as solved
+      const w = window as any;
+      if (w.___grecaptcha_cfg?.clients) {
+        for (const client of Object.values(
+          w.___grecaptcha_cfg.clients,
+        ) as any[]) {
+          for (const val of Object.values(client)) {
+            if (val && typeof val === "object") {
+              for (const prop of Object.values(val as any)) {
+                if (
+                  prop &&
+                  typeof prop === "object" &&
+                  "callback" in (prop as any)
+                ) {
+                  const cb = (prop as any).callback;
+                  if (typeof cb === "function") {
+                    cb(t);
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }, token);
   }

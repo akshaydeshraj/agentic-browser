@@ -2,7 +2,21 @@ import { chromium, type BrowserContext } from "patchright";
 import { randomUUID } from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
+import { existsSync } from "fs";
 import type { Session, CreateSessionRequest, Config } from "../types.js";
+
+// Use real Chrome if available, fall back to Patchright's bundled Chromium
+function detectChromeChannel(): "chrome" | "chromium" {
+  const chromePaths = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/google-chrome",
+  ];
+  for (const p of chromePaths) {
+    if (existsSync(p)) return "chrome";
+  }
+  return "chromium";
+}
 
 interface ActiveSession extends Session {
   context: BrowserContext;
@@ -23,7 +37,17 @@ export class BrowserManager {
     return port;
   }
 
+  private validateProfileName(name: string): void {
+    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+      throw new Error(
+        `Invalid profile name: "${name}". Only alphanumeric, hyphens, and underscores allowed.`,
+      );
+    }
+  }
+
   async createSession(req: CreateSessionRequest): Promise<Session> {
+    this.validateProfileName(req.profileName);
+
     // Profile locking: return existing session if profile is already active
     const existingId = this.profileToSession.get(req.profileName);
     if (existingId) {
@@ -38,8 +62,11 @@ export class BrowserManager {
 
     await fs.mkdir(profileDataDir, { recursive: true });
 
+    const channel = detectChromeChannel();
+    console.log(`Launching browser with channel: ${channel}`);
+
     const context = await chromium.launchPersistentContext(profileDataDir, {
-      channel: "chrome",
+      channel,
       headless: false,
       viewport: null,
       ignoreDefaultArgs: ["--enable-automation"],
@@ -62,7 +89,7 @@ export class BrowserManager {
     const session: ActiveSession = {
       id,
       profileName: req.profileName,
-      cdpWsUrl: "", // Set by index.ts based on host
+      cdpWsUrl: `/cdp/${id}`, // Relative path; routes prepend host
       internalCdpWsUrl,
       cdpPort: port,
       createdAt: new Date().toISOString(),
@@ -90,8 +117,9 @@ export class BrowserManager {
       }
       await new Promise((r) => setTimeout(r, 500));
     }
-    // Fallback: construct from port
-    return `ws://127.0.0.1:${port}`;
+    throw new Error(
+      `Failed to discover CDP WebSocket URL on port ${port} after ${maxRetries} retries`,
+    );
   }
 
   async closeSession(id: string): Promise<void> {

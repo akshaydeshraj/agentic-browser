@@ -1,5 +1,14 @@
 import { Hono } from "hono";
+import type { Context } from "hono";
 import type { BrowserManager } from "../services/browser-manager.js";
+import type { Session } from "../types.js";
+
+function withFullCdpUrl(c: Context, session: Session): Session {
+  const host = c.req.header("host") ?? "localhost:3000";
+  const protocol =
+    c.req.header("x-forwarded-proto") === "https" ? "wss" : "ws";
+  return { ...session, cdpWsUrl: `${protocol}://${host}/cdp/${session.id}` };
+}
 
 export function createSessionRoutes(browserManager: BrowserManager) {
   const app = new Hono();
@@ -14,22 +23,20 @@ export function createSessionRoutes(browserManager: BrowserManager) {
       profileName: body.profileName,
     });
 
-    // Build the external CDP WebSocket URL
-    const host = c.req.header("host") ?? "localhost:3000";
-    const protocol = c.req.header("x-forwarded-proto") === "https" ? "wss" : "ws";
-    session.cdpWsUrl = `${protocol}://${host}/cdp/${session.id}`;
-
-    return c.json(session, 201);
+    return c.json(withFullCdpUrl(c, session), 201);
   });
 
   app.get("/", (c) => {
-    return c.json(browserManager.listSessions());
+    const sessions = browserManager
+      .listSessions()
+      .map((s) => withFullCdpUrl(c, s));
+    return c.json(sessions);
   });
 
   app.get("/:id", (c) => {
     const session = browserManager.getSession(c.req.param("id"));
     if (!session) return c.json({ error: "Session not found" }, 404);
-    return c.json(session);
+    return c.json(withFullCdpUrl(c, session));
   });
 
   app.delete("/:id", async (c) => {
