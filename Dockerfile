@@ -42,6 +42,9 @@ COPY extensions/ ./extensions/
 # Copy compiled TypeScript
 COPY dist/ ./dist/
 
+# Copy seed recipes
+COPY data/recipes/ ./data/recipes/
+
 # Copy entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

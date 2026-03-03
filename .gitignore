@@ -3,4 +3,5 @@ dist/
 .env
 tasks/
 extensions/nopecha/
+test-profiles/
 *.log
