@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p extensions/nopecha
           wget -q -O /tmp/nopecha.zip \
-            "https://github.com/nicedayzhu/NopeCHA/releases/download/0.5.5/chromium_automation.zip"
+            "https://github.com/NopeCHALLC/nopecha-extension/releases/download/0.5.5/chromium_automation.zip"
           unzip -o /tmp/nopecha.zip -d extensions/nopecha
 
       - name: Log in to registry
