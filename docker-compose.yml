@@ -1,0 +1,32 @@
+services:
+  agentic-browser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - API_TOKEN=${API_TOKEN}
+      - TWOCAPTCHA_API_KEY=${TWOCAPTCHA_API_KEY}
+      - NOPECHA_API_KEY=${NOPECHA_API_KEY}
+      - PROFILES_DIR=/data/profiles
+      - EXTENSIONS_DIR=/app/extensions
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - browser-profiles:/data/profiles
+    # Chrome requires large /dev/shm (default 64MB crashes it)
+    shm_size: "2gb"
+    # Chrome sandbox needs namespace isolation
+    cap_add:
+      - SYS_ADMIN
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  browser-profiles:
+    driver: local
