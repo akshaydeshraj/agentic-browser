@@ -3,7 +3,7 @@ FROM node:22-slim
 # Install system dependencies for Chrome and Xvfb
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Chrome runtime dependencies
-    wget gnupg ca-certificates \
+    wget unzip gnupg ca-certificates \
     libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libgbm1 \
     libasound2 libatspi2.0-0 libxcomposite1 libxdamage1 libxfixes3 \
     libxrandr2 libpango-1.0-0 libcairo2 libcups2 libdbus-1-3 \
@@ -41,8 +41,12 @@ COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npm run build && npm prune --omit=dev
 
-# Copy NopeCHA extension
-COPY extensions/ ./extensions/
+# Download NopeCHA extension
+RUN mkdir -p extensions/nopecha \
+    && wget -q -O /tmp/nopecha.zip \
+       "https://github.com/NopeCHALLC/nopecha-extension/releases/download/0.5.5/chromium_automation.zip" \
+    && unzip -o /tmp/nopecha.zip -d extensions/nopecha \
+    && rm /tmp/nopecha.zip
 
 # Copy seed recipes
 COPY data/recipes/ ./data/recipes/
